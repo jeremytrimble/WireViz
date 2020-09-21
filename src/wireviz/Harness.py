@@ -8,14 +8,14 @@ from wireviz.wv_helper import awg_equiv, mm2_equiv, tuplelist2tsv, nested, flatt
 from collections import Counter
 from typing import List
 
-
 class Harness:
 
-    def __init__(self):
+    def __init__(self, template_filepath):
         self.color_mode = 'SHORT'
         self.connectors = {}
         self.cables = {}
         self.metadata = None
+        self._template_filepath = template_filepath
 
     def add_connector(self, name, *args, **kwargs):
         self.connectors[name] = Connector(name, *args, **kwargs)
@@ -228,7 +228,7 @@ class Harness:
         # HTML output
 
         # TODO: specify template file in YAML metadata or as command line argument
-        with open('template.html', 'r') as file:
+        with open(self._template_filepath, 'r') as file:
             html = file.read()
 
         # embed SVG diagram

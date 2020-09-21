@@ -7,13 +7,18 @@ import sys
 
 import yaml
 
+import os.path
+this_file_dir = os.path.dirname( os.path.realpath( __file__ ) )
+
+DEFAULT_TEMPLATE_FILEPATH = os.path.join(this_file_dir, "template.html")
+
 if __name__ == '__main__':
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from wireviz.Harness import Harness
 
 
-def parse(yaml_input, file_out=None, generate_bom=False):
+def parse(yaml_input, file_out=None, generate_bom=False, template_filepath=DEFAULT_TEMPLATE_FILEPATH):
 
     yaml_data = yaml.safe_load(yaml_input)
 
@@ -51,7 +56,7 @@ def parse(yaml_input, file_out=None, generate_bom=False):
                 return False
         return True
 
-    harness = Harness()
+    harness = Harness(template_filepath)
 
     # add items
     sections = ['connectors', 'cables', 'ferrules', 'connections']
@@ -205,6 +210,9 @@ def parse_cmdline():
     parser.add_argument('-o', '--output_file', action='store', type=str, metavar='OUTPUT')
     parser.add_argument('--generate-bom', action='store_true', default=True)
     parser.add_argument('--prepend-file', action='store', type=str, metavar='YAML_FILE')
+    parser.add_argument("-t", "--template-filepath", dest="template_filepath",
+        default=DEFAULT_TEMPLATE_FILEPATH, type=str, metavar='HTML_TEMPLATE_FILE',
+        help="Template (HTML) file.")
     return parser.parse_args()
 
 
@@ -235,7 +243,7 @@ def main():
         file_out = args.output_file
     file_out = os.path.abspath(file_out)
 
-    parse(yaml_input, file_out=file_out, generate_bom=args.generate_bom)
+    parse(yaml_input, file_out=file_out, generate_bom=args.generate_bom, template_filepath=args.template_filepath)
 
 
 if __name__ == '__main__':

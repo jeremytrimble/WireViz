@@ -18,7 +18,7 @@ if __name__ == '__main__':
 from wireviz.Harness import Harness
 
 
-def parse(yaml_input, file_out=None, generate_bom=False, template_filepath=DEFAULT_TEMPLATE_FILEPATH):
+def parse(yaml_input, file_out=None, generate_bom=False, template_filepath=DEFAULT_TEMPLATE_FILEPATH, filepaths_base_dir=None):
 
     yaml_data = yaml.safe_load(yaml_input)
 
@@ -56,7 +56,7 @@ def parse(yaml_input, file_out=None, generate_bom=False, template_filepath=DEFAU
                 return False
         return True
 
-    harness = Harness(template_filepath)
+    harness = Harness(template_filepath, filepaths_base_dir)
 
     # add items
     sections = ['connectors', 'cables', 'ferrules', 'connections']
@@ -243,7 +243,9 @@ def main():
         file_out = args.output_file
     file_out = os.path.abspath(file_out)
 
-    parse(yaml_input, file_out=file_out, generate_bom=args.generate_bom, template_filepath=args.template_filepath)
+    filepaths_base_dir = os.path.abspath( os.path.dirname(args.input_file) )
+
+    parse(yaml_input, file_out=file_out, generate_bom=args.generate_bom, template_filepath=args.template_filepath, filepaths_base_dir=filepaths_base_dir)
 
 
 if __name__ == '__main__':

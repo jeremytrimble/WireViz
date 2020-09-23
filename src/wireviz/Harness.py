@@ -8,16 +8,26 @@ from wireviz.wv_helper import awg_equiv, mm2_equiv, tuplelist2tsv, nested, flatt
 from collections import Counter
 from typing import List
 
+import os.path
+
+from itertools import zip_longest
+
 class Harness:
 
-    def __init__(self, template_filepath):
+    def __init__(self, template_filepath, filepaths_base_dir):
         self.color_mode = 'SHORT'
         self.connectors = {}
         self.cables = {}
         self.metadata = None
         self._template_filepath = template_filepath
+        self._filepaths_base_dir = filepaths_base_dir
 
     def add_connector(self, name, *args, **kwargs):
+        if self._filepaths_base_dir and ("img" in kwargs):
+            img_path = kwargs["img"]
+            if not os.path.isabs(img_path):
+                img_path = os.path.join(self._filepaths_base_dir, img_path)
+            kwargs["img"] = img_path
         self.connectors[name] = Connector(name, *args, **kwargs)
 
     def add_cable(self, name, *args, **kwargs):
@@ -96,8 +106,50 @@ class Harness:
                         pinouts[0].append(f'<p{pinnumber}l>{pinnumber}')
                     if connector.ports_right:
                         pinouts[2].append(f'<p{pinnumber}r>{pinnumber}')
-                label = [connector.name if connector.show_name else '', attributes, pinouts, connector.notes]
-                dot.node(key, label=nested(label))
+
+                new_html =  '<table border="1" cellspacing="0" cellpadding="0">' # main table
+                new_html +=     f'<tr><td colspan="3">{connector.name}</td></tr>'
+
+                if 0:
+                    new_html +=     f'<tr border="0">'
+                    for attribute in attributes:
+                        new_html +=         f'<td>{attribute if attribute is not None else ""}</td>'
+                    new_html +=     f'</tr>'
+                else:
+                    new_html +=     f'<tr border="0"><td colspan="3">{"    ".join( x for x in attributes if x )}</td></tr>'
+                
+                for pin_idx, (lport, pinname, rport) in enumerate( zip_longest( *pinouts ), 1 ):
+                    new_html +=     f'<tr>'
+
+                    if lport:
+                        lport = lport[1:-2]
+                        new_html +=     f'<td SIDES="TB" PORT="{lport}" WIDTH="20">{pin_idx}</td>'
+                    else:
+                        new_html +=     f'<td SIDES="TB" WIDTH="20">{pin_idx}</td>'
+
+                    new_html +=         f'<td SIDES="TB">{pinname}</td>'
+
+                    if rport:
+                        rport = rport[1:-2]
+                        new_html +=     f'<td SIDES="TB" PORT="{rport}" WIDTH="20"> </td>'
+                    else:
+                        new_html +=     f'<td SIDES="TB" WIDTH="20"> </td>'
+
+                    new_html +=     f'</tr>'
+
+                if connector.notes:
+                    new_html +=     f'<tr><td colspan="3">{connector.notes}</td></tr>'
+
+                if connector.img:
+                    img_path = connector.img
+                    new_html +=     f'<tr><td colspan="3"><img src="{img_path}" /></td></tr>'
+
+                new_html +=  '</table>' # main table
+
+                dot.node(key, shape='none',
+                         style='filled',
+                         margin='0',
+                         label= f"<{new_html}>")
 
                 if len(connector.loops) > 0:
                     dot.attr('edge', color='#000000:#ffffff:#000000')
@@ -232,13 +284,16 @@ class Harness:
             html = file.read()
 
         # embed SVG diagram
-        with open(f'{filename}.svg') as file:
-            svgdata = file.read()
-        html = html.replace('<!-- diagram -->', svgdata)
+        if 1:
+            with open(f'{filename}.svg') as file:
+                svgdata = file.read()
+            html = html.replace('<!-- diagram -->', svgdata)
 
-        # Alternative: embed <img> tag with link to SVG/PNG
-        # import os
-        # html = html.replace('<!-- diagram -->', '<img src="{filename}.png" />'.format(filename=os.path.basename(filename)))
+        else:
+            # Alternative: embed <img> tag with link to SVG/PNG
+            import os
+            html = html.replace('<!-- diagram -->', '<img src="{filename}.png" />'.format(filename=os.path.basename(filename)))
+            #html = html.replace('<!-- diagram -->', '<img src="{filename}.svg" />'.format(filename=os.path.basename(filename)))
 
         # generate BOM table
         bom_list_flat = flatten2d(bom_list)
@@ -299,7 +354,12 @@ class Harness:
                 html = html.replace(f'<!-- rev_{i}_name -->', name)
                 html = html.replace(f'<!-- rev_{i}_date -->', date)
 
-            html = html.replace(f'"sheetsize_default"', '"{}"'.format(self.metadata['format']['sheetsize'])) # include quotes so no replacement happens within <style> definition
+            sheetsize = "Letter_landscape"
+            if ('format' in self.metadata):
+                fmt = self.metadata['format']
+                if ('sheetsize' in fmt):
+                    sheetsize = fmt['sheetsize']
+            html = html.replace(f'"sheetsize_default"', '"{}"'.format( sheetsize )) # include quotes so no replacement happens within <style> definition
 
         with open(f'{filename}.html','w') as file:
             file.write(html)

@@ -21,6 +21,7 @@ class Connector:
     show_name: bool = True
     show_pincount: bool = True
     hide_disconnected_pins: bool = False
+    img: Optional[str] = None   # path to image to include in diagram
 
     def __post_init__(self):
         self.ports_left = False

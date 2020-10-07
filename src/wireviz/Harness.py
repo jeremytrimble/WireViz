@@ -103,9 +103,9 @@ class Harness:
                         continue
                     pinouts[1].append(pinname)
                     if connector.ports_left:
-                        pinouts[0].append(f'<p{pinnumber}l>{pinnumber}')
+                        pinouts[0].append(pinnumber)
                     if connector.ports_right:
-                        pinouts[2].append(f'<p{pinnumber}r>{pinnumber}')
+                        pinouts[2].append(pinnumber)
 
                 new_html =  '<table border="1" cellspacing="0" cellpadding="0">' # main table
                 new_html +=     f'<tr><td colspan="3">{connector.name}</td></tr>'
@@ -122,7 +122,7 @@ class Harness:
                     new_html +=     f'<tr>'
 
                     if lport:
-                        lport = lport[1:-2]
+                        lport = f"p{lport}l"
                         new_html +=     f'<td SIDES="TB" PORT="{lport}" WIDTH="20">{pin_idx}</td>'
                     else:
                         new_html +=     f'<td SIDES="TB" WIDTH="20">{pin_idx}</td>'
@@ -130,7 +130,7 @@ class Harness:
                     new_html +=         f'<td SIDES="TB">{pinname}</td>'
 
                     if rport:
-                        rport = rport[1:-2]
+                        rport = f"p{rport}r"
                         new_html +=     f'<td SIDES="TB" PORT="{rport}" WIDTH="20"> </td>'
                     else:
                         new_html +=     f'<td SIDES="TB" WIDTH="20"> </td>'
